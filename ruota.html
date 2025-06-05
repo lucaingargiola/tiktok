@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Ruota della Fortuna - Freccia più piccola</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #f0f0f0;
+    margin: 40px;
+  }
+  #container {
+    position: relative;
+    display: inline-block;
+  }
+  #wheelCanvas {
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  }
+  #indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+  }
+  button {
+    margin-top: 20px;
+    font-size: 18px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  #result {
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 20px;
+  }
+</style>
+</head>
+<body>
+<h1>Ruota della Fortuna</h1>
+<div id="container">
+  <canvas id="wheelCanvas" width="500" height="500"></canvas>
+
+  <!-- Freccia più piccola -->
+  <svg id="indicator" width="25" height="40" viewBox="0 0 30 40" aria-label="Indicatore ruota">
+    <polygon points="0,40 30,40 15,0" fill="black" />
+  </svg>
+</div>
+<button onclick="spin()">Gira la Ruota</button>
+<p id="result"></p>
+
+<script>
+const options = [
+  "Canta una canzone",
+  "Fai 10 flessioni",
+  "Imita un animale",
+  "Danza buffa",
+  "Racconta un segreto",
+  "Urla 'sono un pollo!'"
+];
+
+const colors = [
+  '#FF5733', // rosso-arancio
+  '#33FF57', // verde
+  '#3357FF', // blu
+  '#FF33A6', // rosa
+  '#FFC300', // giallo oro
+  '#8E44AD'  // viola
+];
+
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const centerX = 250;
+const centerY = 250;
+const radius = 250;
+const numSegments = options.length;
+const arcSize = 2 * Math.PI / numSegments;
+
+let spinAngle = 0;
+let spinning = false;
+
+function drawWheel() {
+  for (let i = 0; i < numSegments; i++) {
+    const startAngle = i * arcSize;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, startAngle, startAngle + arcSize);
+    ctx.fill();
+
+    // Testo segmenti
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(startAngle + arcSize / 2);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(options[i], radius - 20, 5);
+    ctx.restore();
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.rotate(spinAngle);
+  ctx.translate(-centerX, -centerY);
+  drawWheel();
+  ctx.restore();
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+
+  const duration = 5000;
+  const startAngle = spinAngle;
+  const targetAngle = startAngle + (Math.PI * 20) + Math.random() * (2 * Math.PI);
+
+  let startTime = null;
+
+  function animate(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+    spinAngle = startAngle + (targetAngle - startAngle) * easedProgress;
+
+    draw();
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      const normalizedAngle = spinAngle % (2 * Math.PI);
+      const adjustedAngle = (normalizedAngle + Math.PI / 2) % (2 * Math.PI);
+      let index = Math.floor((2 * Math.PI - adjustedAngle) / arcSize);
+      index = index % numSegments;
+
+      const selected = options[index];
+      document.getElementById('result').textContent = `La penitenza è: ${selected}`;
+      spinning = false;
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+draw();
+</script>
+</body>
+</html>
